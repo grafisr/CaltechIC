@@ -1,0 +1,88 @@
+#This code is to simulate two different evolution hypothesis: the Adaptive Immunity Mutation Hypothesis and the Random Mutation Hypothesis. 
+#It is a recreation of a toy problem inspired by the Luria–Delbrück experiment.
+#The end results are two plots of mutation densities.
+import numpy as np
+import pandas as pd
+import iqplot
+import bokeh.plotting
+import bokeh.io
+bokeh.io.output_notebook()
+
+import random
+import numpy as np
+#Probability of mutation occuring for a single cell division is 10^-5, which is also a
+a = 1e-5
+gens = 20
+trials = 100
+def adaptive_mutation():
+    N = 2**gens #N is total number of cells across gens number of generations.
+    mutations = 0
+    for i in range(N):
+        if random.random() < a:
+            mutations += 1
+    return mutations
+
+def random_mutation():
+    N = 2**gens
+    #cells can either be non-mutant or mutant, so 0 will represent non-mutated cells and 1 will present mutated cells. we start with one non-mutated cell that might or might not mutate. 
+    cells = [0]
+    for g in range(gens):
+        new_cells = []
+        for i in cells:
+            for j in range(2):
+                if i == 1:
+                    new_cells.append(1) #if the cell is mutated it will split into two mutated cells for sure
+                else:
+                    if random.random() < a:
+                        new_cells.append(1)
+                    else:
+                        new_cells.append(0)
+        cells = new_cells
+    mutations = 0
+    for i in cells:
+        if i == 1:
+            mutations += 1
+    return mutations
+
+results_adaptive = []
+for i in range(trials):
+    results_adaptive.append(adaptive_mutation())
+
+mean_adaptive = np.mean(results_adaptive)
+variance_adaptive = np.var(results_adaptive)
+fano_adaptive = variance_adaptive / mean_adaptive
+
+print("Mean:", mean_adaptive, "Variance:", variance_adaptive, "Fano:", fano_adaptive)
+
+results_random = []
+for i in range(trials):
+    results_random.append(random_mutation())
+
+mean_random = np.mean(results_random)
+variance_random = np.var(results_random)
+fano_random = variance_random / mean_random
+
+print("Mean:", mean_random, "Variance:", variance_random, "Fano", fano_random)
+
+
+df_adaptive = pd.DataFrame({"n": results_adaptive})
+df_random = pd.DataFrame({"n": results_random})
+adaptive_plot = iqplot.histogram(
+    data = df_adaptive,
+    q = "n",
+    frame_height = 200,
+    title = "Adaptive Immunity Hypothesis Mutations",
+    density = True
+)
+
+bokeh.io.show(adaptive_plot)
+
+random_plot = iqplot.histogram(
+    data = df_random,
+    q = "n",
+    frame_height = 200,
+    title = "Random Mutation Hypothesis Mutations",
+    density = True
+)
+
+bokeh.io.show(random_plot)
